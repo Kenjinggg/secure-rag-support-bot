@@ -1,0 +1,5 @@
+anthropic
+chromadb
+sentence-transformers
+python-dotenv
+# openai   # uncomment if you switch LLM_PROVIDER to openai
