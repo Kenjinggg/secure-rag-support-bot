@@ -41,7 +41,7 @@ A portfolio RAG customer-support chatbot demo for Kenji's AI-integration freelan
 
 ## Roadmap
 - v1: terminal pipeline passes all 13 test questions ✅
-- v1.1: Streamlit UI + deploy for a public link on Streamlit Community Cloud. Live since 2026-10-14; only the README demo GIF is left (see Deployment).
+- v1.1: Streamlit UI + deploy for a public link on Streamlit Community Cloud. Live since 2026-10-14 ✅
 - v2: embeddable widget for a Shopify store
 
 ## Deployment (decided 2026-10-14)
@@ -64,8 +64,8 @@ Tasks for Claude Code:
 - [x] **Daily cap weakness:** the `MAX_QUESTIONS_PER_DAY` counter is in-process memory, so it resets every time the app wakes from sleep or restarts. Treat it as a speed bump, not a limit. Don't build persistent storage for this demo. Instead: keep the per-session cap, add a short note in README "Security" explaining the hard limit is the provider spend cap, and remind Kenji to set it.
 - [x] After deploy, run the 13 test questions against the live app (at least Q1, Q6, Q8, Q11–13) and report results. Q1, Q6, Q8, Q11, Q12, Q13 all passed live on 2026-10-14.
 - [x] Add the live link and a "may take ~1 minute to wake up" note at the top of README.
-- [ ] Add a short demo GIF/video to the top of README (Kenji records it: one normal answer with sources, one refusal, one blocked injection). Clients watch the video more often than they click the link, so it matters more than the link.
+- [ ] ~~Demo GIF at the top of README~~: skipped by Kenji (2026-10-14) as not worth the effort. Optional cheaper version if he changes his mind: one screenshot of a blocked injection with "Show retrieval details" open.
 
 Kenji's manual steps (remind him, don't do them):
-- Create a **separate API key** just for the deployed app (not his laptop key), and set a **monthly spend limit (~$5)** in the Claude Console. That limit is the real protection against strangers using the public link.
+- ✅ Separate API key for the deployed app, with a **$5 monthly spend limit** (confirmed by Kenji 2026-10-14). That limit is the real protection against strangers using the public link.
 - Before sending a proposal, open the live link so the app is awake when the client clicks.
