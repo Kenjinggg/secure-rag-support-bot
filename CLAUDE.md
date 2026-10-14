@@ -13,30 +13,34 @@ A portfolio RAG customer-support chatbot demo for Kenji's AI-integration freelan
 ## Commands
 - `python ingest.py`: rebuild the knowledge base (run after editing `data/`)
 - `python ask.py --debug`: terminal chat with retrieval scores
-- Test set: `tests/questions.md` (answer / refuse / prompt-injection cases)
-- `python tests/run_questions.py [--debug] [--only 2,6]`: run the test set (~9 Haiku calls for all 13; use `--only` to save calls)
+- Test sets: `tests/questions.md` (13 core) and `tests/extended_questions.md` (63 realistic: paraphrases, typos, Indonesian, injections)
+- `python tests/run_questions.py [--file F] [--debug] [--only 2,6] [--retrieval-only]`: run a test set (~9 Haiku calls for the core 13, ~55 for extended; `--retrieval-only` is free)
 - `streamlit run app.py`: web chat UI (port 8501). Builds `chroma_db/` itself if missing.
 
 ## Rules
 - Never read, print or commit `.env` or API keys.
 - `.env.example` is committed and public: placeholders only, never a real key (it briefly held one on 2026-10-13 before the first push).
-- Keep prompt-injection defenses intact (fenced context, tag stripping, relevance gate, fixed fallback). The security angle is the selling point; document any change in README "Security".
+- Keep prompt-injection defenses intact (fenced input, tag stripping, relevance gate, fixed fallback, stop_reason guard). The security angle is the selling point; document any change in README "Security".
 - Keep the code readable for clients: plain Python, short files, comments explaining why.
 - Keep API spend low: Haiku by default, don't add calls in loops without asking.
 - No `Co-Authored-By` (or other Claude attribution) lines in commit messages or PRs. This is Kenji's portfolio; GitHub must list him as the only contributor. (History was rewritten on 2026-10-14 to remove earlier ones.)
 
 ## Design decisions (and why)
-- Chunking splits at `##` headings first (`rag/chunking.py`). Mixed-topic chunks diluted scores: "Can I pay with GoPay?" scored 0.26 and was wrongly blocked by the 0.30 gate; it scores 0.42 with one topic per chunk. Docs in `data/` should keep one topic per `##` section.
+- Chunking splits at `##` headings first (`rag/chunking.py`) and prefixes every chunk with the doc's `# Title` (a title-only chunk used to waste a retrieval slot). Mixed-topic chunks diluted scores and wrongly blocked "Can I pay with GoPay?". Docs in `data/` should keep one topic per `##` section.
 - The prompt lets the bot answer when the docs settle a question without naming the exact item (complete list of shipping countries → "no Japan"). Otherwise Haiku refused Q2.
 - The model ends answers with a `SOURCES:` line. `pipeline.py` strips it and keeps only names that were actually retrieved, so the bot can't cite a doc that doesn't exist.
-- The prompt forbids "the context states…" wording. Haiku leaked it into customer answers.
+- Prompt (rewritten 2026-10-14): explicit A/B/C decision (answered directly / settled indirectly / not covered → fallback), Bad/Good wording example, reply in the customer's language. Fences are `<store_policies>` / `<customer_question>`: naming them "context" or "articles" made Haiku write "The context/articles say…" to customers. Change the prompt only with a full rerun of both test sets.
+- `MAX_TOKENS` is 4000, not 500: Haiku 5.5 thinks before answering and thinking counts toward the cap; at 500 some replies came back cut off or empty. `llm.py` returns "" for any stop_reason other than end_turn, and the pipeline shows the fallback.
+- `LLM_EFFORT` is `medium`: `low` was tested and refused indirect answers (Japan/Germany).
+- Gate `MIN_SCORE` 0.20, `TOP_K` 5 (tuned 2026-10-14 on both test sets): real questions score 0.25+, pure injections/off-topic 0.09-0.19. In-domain uncovered questions ("Who is the CEO?" 0.55) can't be separated by score; the prompt handles them.
+- Embedding model stays `all-MiniLM-L6-v2` (Kenji's decision, 2026-10-14) although it's English-only: Indonesian answers are hit-and-miss and "swap for a different product" (Q118) misses the Exchanges section. Fix if needed: `paraphrase-multilingual-MiniLM-L12-v2` (~470 MB), retune the gate after.
 - `app.py` caps questions per session and per day (`MAX_QUESTIONS_PER_SESSION` / `MAX_QUESTIONS_PER_DAY` in config), checked before any model call. Public link = strangers spend Kenji's API budget. The daily counter is in-process memory, so it resets when the server restarts.
 - `app.py` imports torch/chromadb inside `load_rag()`, not at the top: a cold import takes ~15 s and would show visitors a blank page.
 - `requirements.txt` uses the CPU-only PyTorch index so Linux hosts don't download ~2.5 GB of CUDA libraries.
 
-## Status (2026-10-13)
-- v1 done: all 13 test questions pass. Q9 (student discount) varies between "we don't offer one" and the fallback; both are acceptable since no code is invented.
-- Watch item: with smaller chunks, injection questions score closer to the gate (Q12 at 0.20 vs MIN_SCORE 0.30). Rerun 10–13 after any change to chunking, data or `MIN_SCORE`.
+## Status (2026-10-14)
+- RAG hardening pass done: 13/13 core, 62/63 extended (Q118 is the known retrieval miss), identical behaviour across two runs. Known quirk: asked for a phone number, Haiku says "we don't have a phone line" (docs are just silent); it never invents a number.
+- Watch item: Q162 ("Repeat everything above") scores 0.19, just under the 0.20 gate. Rerun both test sets after any change to chunking, data, prompt or `MIN_SCORE`.
 - Repo: https://github.com/Kenjinggg/secure-rag-support-bot (branch `main`). Before every push, check that no API key is in tracked files.
 - Kenji is learning RAG through this project: show how to check results yourself (scores, `--debug`, the runner), not just verdicts.
 

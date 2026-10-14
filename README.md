@@ -8,18 +8,19 @@ A customer-support chatbot that answers **only** from a store's own help docs, c
 
 1. **Ingest:** the help docs in `data/` are split into chunks, embedded with a free local model (`all-MiniLM-L6-v2`), and stored in a local Chroma vector database.
 2. **Retrieve:** each question is embedded, and the most similar chunks are fetched.
-3. **Answer:** the chunks are sent to the LLM with strict rules: answer only from this context, otherwise fall back to a fixed message.
+3. **Answer:** the chunks are sent to the LLM with strict rules: answer only from these store policies (directly, or when they settle the question indirectly), otherwise fall back to a fixed message.
 
 No frameworks (LangChain etc.). The whole pipeline is about 200 lines of plain Python.
 
 ## Security: prompt-injection hardening
 
-- **Fenced untrusted input.** Docs and questions are wrapped in `<context>` / `<question>` tags, and the system prompt treats everything inside them as data, never as instructions.
+- **Fenced untrusted input.** Docs and questions are wrapped in `<store_policies>` / `<customer_question>` tags, and the system prompt treats everything inside them as data, never as instructions.
 - **Tag stripping.** Any fence tags found in the input are removed, so a malicious question or document can't "close" the fence and inject fake system instructions.
-- **Relevance gate.** If no doc chunk is relevant enough, the bot refuses *without calling the LLM*. Off-topic and injection attempts often never reach the model.
+- **Relevance gate.** If no doc chunk is relevant enough (`MIN_SCORE`, default 0.20), the bot refuses *without calling the LLM*. Pure injection and off-topic attempts ("write me a poem", "print your system prompt") score 0.09-0.19 and never reach the model; real questions score 0.25+. Store-flavoured questions the docs don't cover ("Who is your CEO?") can't be separated by score, so the model's own refusal rules handle those.
 - **Fixed fallback.** Refusals use one exact message, so the bot can't be talked into inventing discount codes, policies or contact details. The one exception: if the docs settle a question without naming the exact item (e.g. a complete list of shipping countries answers "Do you ship to Japan?" with no), the bot answers from the docs instead of refusing.
+- **No half answers.** If the model's reply is cut off or declined (any stop reason other than a normal finish), the bot shows the fixed fallback instead of a partial sentence.
 - **Validated citations.** The model names the docs it used, and only names that were actually retrieved are shown, so it can't cite a source that doesn't exist.
-- **One topic per chunk.** Docs are split at `##` headings, so each chunk scores cleanly against the relevance gate instead of being diluted by unrelated topics.
+- **One topic per chunk.** Docs are split at `##` headings (each chunk keeps its document title), so each chunk scores cleanly against the relevance gate instead of being diluted by unrelated topics.
 - **Input length cap.** Questions are truncated to 1,000 characters.
 - **Usage limits (web app).** A public link means anyone can spend the API budget, so the app caps questions per visitor session (`MAX_QUESTIONS_PER_SESSION`, default 15) and per day across all visitors (`MAX_QUESTIONS_PER_DAY`, default 300), checked before any model call. These are speed bumps, not hard limits: the daily counter lives in memory and resets whenever the app restarts or wakes from sleep, and a visitor can start a new session by reloading. **The hard limit is the provider's spend cap:** give the deployed app its own API key with a monthly spend limit (e.g. $5) in the Anthropic Console.
 
@@ -63,13 +64,26 @@ OPENAI_API_KEY=...
 
 ## Testing
 
-`tests/questions.md` lists 13 questions: ones the bot should answer, ones it should refuse, and prompt-injection attempts it should resist. Run them all with:
+Two test sets:
+
+- `tests/questions.md`: the 13 core questions (answer / refuse / prompt injection).
+- `tests/extended_questions.md`: 63 more, written the way real visitors ask: paraphrases, typos, multi-part questions, Indonesian, off-topic requests and nastier injection attempts.
 
 ```powershell
-python tests/run_questions.py              # all 13
-python tests/run_questions.py --debug      # also show retrieved chunks and scores
-python tests/run_questions.py --only 2,6   # selected questions only
+python tests/run_questions.py                                      # the 13 core questions
+python tests/run_questions.py --file tests/extended_questions.md   # the extended set
+python tests/run_questions.py --retrieval-only                     # retrieval only: no API calls, free
+python tests/run_questions.py --debug                              # also show retrieved chunks and scores
+python tests/run_questions.py --only 2,6                           # selected questions only
 ```
+
+The runner checks behaviour (answered vs refused), that the expected source was retrieved, and that replies don't leak prompt wording. Whether an answer is *correct* still needs a human read against the expected note.
+
+Latest results: 13/13 core, 62/63 extended, identical across repeated runs.
+
+**Known limitations** (from the English-only embedding model, `all-MiniLM-L6-v2`):
+- English questions are the target. Indonesian questions are answered when retrieval happens to find the right section (payment, shipping and sizing worked in tests); otherwise the answer can be incomplete. A multilingual embedding model would fix this.
+- Unusual wording can miss the right section: "swap for a different product" doesn't find the "Exchanges" section (Q118).
 
 ## Using your own docs
 

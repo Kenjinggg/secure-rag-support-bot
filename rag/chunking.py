@@ -5,22 +5,32 @@ Strategy: split at "## " headings first, so each chunk is one topic
 dilutes its embedding, and short questions then score too low to pass
 the relevance gate. Sections longer than the chunk size are packed by
 paragraph. Plain text without headings is treated as one section.
+
+Each chunk starts with the document's "# Title" line, so a section like
+"## Exchanges" still says it belongs to "Returns & Refunds". A title on
+its own would be a useless chunk that takes a retrieval slot.
 """
 import re
 
 from rag import config
 
-# Split right before a level-2 heading; the "# Title" line stays
-# attached to the first section instead of becoming a chunk on its own.
+# Split right before a level-2 heading.
 _SECTION_BREAK = re.compile(r"\n(?=## )")
 
 
 def chunk_text(text: str, size: int = config.CHUNK_SIZE,
                overlap: int = config.CHUNK_OVERLAP) -> list[str]:
+    title = ""
+    first_line = text.lstrip().split("\n", 1)[0]
+    if first_line.startswith("# "):
+        title = first_line
+        text = text.lstrip()[len(first_line):]
+
     chunks: list[str] = []
     for section in _SECTION_BREAK.split(text):
         if section.strip():
-            chunks.extend(_chunk_section(section, size, overlap))
+            for chunk in _chunk_section(section, size, overlap):
+                chunks.append(f"{title}\n{chunk}" if title else chunk)
     return chunks
 
 
