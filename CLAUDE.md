@@ -41,7 +41,7 @@ A portfolio RAG customer-support chatbot demo for Kenji's AI-integration freelan
 
 ## Roadmap
 - v1: terminal pipeline passes all 13 test questions ✅
-- v1.1: Streamlit UI + deploy for a public link on Streamlit Community Cloud. UI done and tested locally (2026-10-14); deploy pending (see Deployment).
+- v1.1: Streamlit UI + deploy for a public link on Streamlit Community Cloud. Live since 2026-10-14; only the README demo GIF is left (see Deployment).
 - v2: embeddable widget for a Shopify store
 
 ## Deployment (decided 2026-10-14)
@@ -59,11 +59,11 @@ Streamlit Cloud facts that affect the code:
 - `chroma_db/` is gitignored, so the deployed app must build it on first start (`app.py` already does this; confirm it works there).
 
 Tasks for Claude Code:
-- [ ] Deploy to Streamlit Community Cloud. Kenji pastes the key into the app's Secrets himself; never ask him to paste it into chat or a file in the repo.
+- [x] Deploy to Streamlit Community Cloud (live 2026-10-14: https://nusa-threads-support.streamlit.app/). No SQLite fix was needed; the index builds on first start there. Kenji pastes the key into the app's Secrets himself; never ask him to paste it into chat or a file in the repo.
 - [x] Make config read the key from Streamlit Secrets as well as `.env` (st.secrets / environment variable), without breaking local runs. Done in `app.py` (`load_streamlit_secrets()`, before config is imported); `.streamlit/secrets.toml` is gitignored.
 - [x] **Daily cap weakness:** the `MAX_QUESTIONS_PER_DAY` counter is in-process memory, so it resets every time the app wakes from sleep or restarts. Treat it as a speed bump, not a limit. Don't build persistent storage for this demo. Instead: keep the per-session cap, add a short note in README "Security" explaining the hard limit is the provider spend cap, and remind Kenji to set it.
-- [ ] After deploy, run the 13 test questions against the live app (at least Q1, Q6, Q8, Q11–13) and report results.
-- [ ] Add the live link and a "may take ~1 minute to wake up" note at the top of README.
+- [x] After deploy, run the 13 test questions against the live app (at least Q1, Q6, Q8, Q11–13) and report results. Q1, Q6, Q8, Q11, Q12, Q13 all passed live on 2026-10-14.
+- [x] Add the live link and a "may take ~1 minute to wake up" note at the top of README.
 - [ ] Add a short demo GIF/video to the top of README (Kenji records it: one normal answer with sources, one refusal, one blocked injection). Clients watch the video more often than they click the link, so it matters more than the link.
 
 Kenji's manual steps (remind him, don't do them):

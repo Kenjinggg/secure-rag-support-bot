@@ -1,5 +1,7 @@
 # RAG Customer Support Demo
 
+**Live demo: [nusa-threads-support.streamlit.app](https://nusa-threads-support.streamlit.app/)** (if it has been idle, it may take about a minute to wake up)
+
 A customer-support chatbot that answers **only** from a store's own help docs, cites its sources, and says "I don't know" instead of making things up. Built for **Nusa Threads**, a fictional online clothing store.
 
 ## How it works
