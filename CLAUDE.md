@@ -23,6 +23,7 @@ A portfolio RAG customer-support chatbot demo for Kenji's AI-integration freelan
 - Keep prompt-injection defenses intact (fenced context, tag stripping, relevance gate, fixed fallback). The security angle is the selling point; document any change in README "Security".
 - Keep the code readable for clients: plain Python, short files, comments explaining why.
 - Keep API spend low: Haiku by default, don't add calls in loops without asking.
+- No `Co-Authored-By` (or other Claude attribution) lines in commit messages or PRs. This is Kenji's portfolio; GitHub must list him as the only contributor. (History was rewritten on 2026-10-14 to remove earlier ones.)
 
 ## Design decisions (and why)
 - Chunking splits at `##` headings first (`rag/chunking.py`). Mixed-topic chunks diluted scores: "Can I pay with GoPay?" scored 0.26 and was wrongly blocked by the 0.30 gate; it scores 0.42 with one topic per chunk. Docs in `data/` should keep one topic per `##` section.
