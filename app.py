@@ -5,12 +5,32 @@
 Same pipeline as ask.py, plus usage limits because a public link means
 strangers spend your API budget.
 """
+import os
 import threading
 from datetime import date
 
 import streamlit as st
 
-from rag import config
+
+def load_streamlit_secrets():
+    """Copy Streamlit Cloud secrets into environment variables.
+
+    rag/config.py and the Anthropic SDK read settings from the environment
+    (filled from .env locally). On Streamlit Cloud they come from the app's
+    Secrets box instead, so bridge them here, before config is imported.
+    Existing environment variables win, so local runs are unaffected.
+    """
+    try:
+        secrets = dict(st.secrets)
+    except Exception:  # no secrets file locally: .env is used instead
+        return
+    for key, value in secrets.items():
+        if isinstance(value, (str, int, float)):
+            os.environ.setdefault(key, str(value))
+
+
+load_streamlit_secrets()
+from rag import config  # noqa: E402  (must come after the secrets bridge)
 
 EXAMPLES = {
     "Answerable": [

@@ -41,5 +41,31 @@ A portfolio RAG customer-support chatbot demo for Kenji's AI-integration freelan
 
 ## Roadmap
 - v1: terminal pipeline passes all 13 test questions ✅
-- v1.1: Streamlit UI + deploy for a public link (Hugging Face Spaces or Streamlit Cloud). UI done and tested locally (2026-10-14); deploy pending.
+- v1.1: Streamlit UI + deploy for a public link on Streamlit Community Cloud. UI done and tested locally (2026-10-14); deploy pending (see Deployment).
 - v2: embeddable widget for a Shopify store
+
+## Deployment (decided 2026-10-14)
+Host: **Streamlit Community Cloud**, deployed from the GitHub repo, `app.py` as entry point.
+
+Why not the others (checked 2026-10-14):
+- Hugging Face Spaces: its docs now say Gradio/Docker Spaces need a paid plan (PRO) on personal accounts, and Streamlit isn't listed as an SDK option any more. Not free for this app.
+- Render / Railway / Fly.io / Koyeb free tiers: trial credits or ~512 MB RAM; torch + MiniLM likely runs out of memory.
+- Cloud Run / a VPS: fine, but overkill for a demo. Keep them in mind for paid client deployments, where the app must not sleep.
+
+Streamlit Cloud facts that affect the code:
+- Memory limit ~2.7 GB (fine for MiniLM + CPU torch).
+- The app sleeps after 12 h without traffic. Waking restarts the process, and the filesystem is not persistent across restarts.
+- Chroma may need the old-SQLite fix (`pysqlite3-binary` + swapping it in for `sqlite3` before chromadb is imported). Apply it only if the deploy actually fails on SQLite, and keep it guarded so local Windows runs are unaffected.
+- `chroma_db/` is gitignored, so the deployed app must build it on first start (`app.py` already does this; confirm it works there).
+
+Tasks for Claude Code:
+- [ ] Deploy to Streamlit Community Cloud. Kenji pastes the key into the app's Secrets himself; never ask him to paste it into chat or a file in the repo.
+- [x] Make config read the key from Streamlit Secrets as well as `.env` (st.secrets / environment variable), without breaking local runs. Done in `app.py` (`load_streamlit_secrets()`, before config is imported); `.streamlit/secrets.toml` is gitignored.
+- [x] **Daily cap weakness:** the `MAX_QUESTIONS_PER_DAY` counter is in-process memory, so it resets every time the app wakes from sleep or restarts. Treat it as a speed bump, not a limit. Don't build persistent storage for this demo. Instead: keep the per-session cap, add a short note in README "Security" explaining the hard limit is the provider spend cap, and remind Kenji to set it.
+- [ ] After deploy, run the 13 test questions against the live app (at least Q1, Q6, Q8, Q11–13) and report results.
+- [ ] Add the live link and a "may take ~1 minute to wake up" note at the top of README.
+- [ ] Add a short demo GIF/video to the top of README (Kenji records it: one normal answer with sources, one refusal, one blocked injection). Clients watch the video more often than they click the link, so it matters more than the link.
+
+Kenji's manual steps (remind him, don't do them):
+- Create a **separate API key** just for the deployed app (not his laptop key), and set a **monthly spend limit (~$5)** in the Claude Console. That limit is the real protection against strangers using the public link.
+- Before sending a proposal, open the live link so the app is awake when the client clicks.

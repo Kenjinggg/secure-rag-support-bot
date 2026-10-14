@@ -19,7 +19,7 @@ No frameworks (LangChain etc.). The whole pipeline is about 200 lines of plain P
 - **Validated citations.** The model names the docs it used, and only names that were actually retrieved are shown, so it can't cite a source that doesn't exist.
 - **One topic per chunk.** Docs are split at `##` headings, so each chunk scores cleanly against the relevance gate instead of being diluted by unrelated topics.
 - **Input length cap.** Questions are truncated to 1,000 characters.
-- **Usage limits (web app).** A public link means anyone can spend the API budget, so the app caps questions per visitor session (`MAX_QUESTIONS_PER_SESSION`, default 15) and per day across all visitors (`MAX_QUESTIONS_PER_DAY`, default 300). Limits are checked before any model call. Also set a monthly spend limit on the API key itself in the Anthropic Console.
+- **Usage limits (web app).** A public link means anyone can spend the API budget, so the app caps questions per visitor session (`MAX_QUESTIONS_PER_SESSION`, default 15) and per day across all visitors (`MAX_QUESTIONS_PER_DAY`, default 300), checked before any model call. These are speed bumps, not hard limits: the daily counter lives in memory and resets whenever the app restarts or wakes from sleep, and a visitor can start a new session by reloading. **The hard limit is the provider's spend cap:** give the deployed app its own API key with a monthly spend limit (e.g. $5) in the Anthropic Console.
 
 ## Setup (Windows)
 
