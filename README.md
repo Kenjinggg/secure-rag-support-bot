@@ -19,6 +19,7 @@ No frameworks (LangChain etc.). The whole pipeline is about 200 lines of plain P
 - **Validated citations.** The model names the docs it used, and only names that were actually retrieved are shown, so it can't cite a source that doesn't exist.
 - **One topic per chunk.** Docs are split at `##` headings, so each chunk scores cleanly against the relevance gate instead of being diluted by unrelated topics.
 - **Input length cap.** Questions are truncated to 1,000 characters.
+- **Usage limits (web app).** A public link means anyone can spend the API budget, so the app caps questions per visitor session (`MAX_QUESTIONS_PER_SESSION`, default 15) and per day across all visitors (`MAX_QUESTIONS_PER_DAY`, default 300). Limits are checked before any model call. Also set a monthly spend limit on the API key itself in the Anthropic Console.
 
 ## Setup (Windows)
 
@@ -39,6 +40,14 @@ python ask.py --debug # also show retrieved chunks and their scores
 ```
 
 The first run downloads the embedding model (~90 MB).
+
+## Web app
+
+```powershell
+streamlit run app.py
+```
+
+A chat page with clickable example questions (including injection attempts) and a "Show retrieval details" panel per answer, which shows the retrieved chunks, their scores and whether the relevance gate let the question through. If `chroma_db/` doesn't exist yet, the app builds it on first start, so a fresh deploy needs no manual `ingest.py` step.
 
 ## Switching LLM provider
 

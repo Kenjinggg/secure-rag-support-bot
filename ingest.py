@@ -12,7 +12,7 @@ from rag import config
 from rag.chunking import chunk_text
 
 
-def main():
+def build_index():
     data_dir = Path(config.DATA_DIR)
     files = sorted(list(data_dir.glob("*.md")) + list(data_dir.glob("*.txt")))
     if not files:
@@ -43,4 +43,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    build_index()

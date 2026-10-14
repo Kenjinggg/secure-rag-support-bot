@@ -28,6 +28,11 @@ TOP_K = int(os.getenv("TOP_K", "4"))
 # without calling the LLM at all (saves money, prevents made-up answers).
 MIN_SCORE = float(os.getenv("MIN_SCORE", "0.30"))
 
+# Public demo limits (web app only). Anyone with the link spends your API
+# budget, so cap questions per visitor and per day across all visitors.
+MAX_QUESTIONS_PER_SESSION = int(os.getenv("MAX_QUESTIONS_PER_SESSION", "15"))
+MAX_QUESTIONS_PER_DAY = int(os.getenv("MAX_QUESTIONS_PER_DAY", "300"))
+
 # Branding for the demo store
 STORE_NAME = os.getenv("STORE_NAME", "Nusa Threads")
 SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "support@nusathreads.example")

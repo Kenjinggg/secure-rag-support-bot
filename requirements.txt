@@ -1,5 +1,10 @@
+# CPU-only PyTorch: the default Linux wheel pulls in ~2.5 GB of GPU (CUDA)
+# libraries that a free hosting tier neither has nor needs.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
 anthropic
 chromadb
 sentence-transformers
 python-dotenv
+streamlit
 # openai   # uncomment if you switch LLM_PROVIDER to openai
